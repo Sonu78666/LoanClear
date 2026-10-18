@@ -521,6 +521,11 @@
        captures whatever's currently scrolled into view, cutting the table
        off after a few rows. Let it expand fully instead when printing. */
     .amort-table-scroll { max-height: none !important; overflow: visible !important; }
+    /* Range sliders are interactive controls with no meaning on paper, and
+       their track doesn't render in print — just floating thumb circles.
+       The value is already shown as text next to each label, so hide them. */
+    input[type="range"] { display: none !important; }
+    .control-group { margin-bottom: 12px !important; }
     thead th { position: static !important; }
     .meta-box.interest .meta-value { color: #b3261e !important; }
   }
