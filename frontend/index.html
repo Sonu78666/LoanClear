@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>LoanClear — EMI Calculator</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self' http://localhost:3001 https://loanclear-backend.up.railway.app;" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self' https://loanclear-backend-production.up.railway.app;" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -483,7 +483,7 @@
 // ============================================================
 // Constants
 // ============================================================
-const BACKEND_URL = 'http://localhost:3001'; // change to production backend URL before deploying
+const BACKEND_URL = 'https://loanclear-backend-production.up.railway.app';
 const MAX_INPUT_CHARS = 400;
 const MAX_MESSAGES_PER_SESSION = 10;
 const COOLDOWN_SECONDS = 3;

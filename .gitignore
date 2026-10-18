@@ -3,3 +3,4 @@ node_modules/
 backend/logs/*.log
 backend.log
 .DS_Store
+.netlify/

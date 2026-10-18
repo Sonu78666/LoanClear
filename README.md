@@ -2,6 +2,8 @@
 
 Full-stack EMI calculator with an AI chat assistant, built with vanilla JS and a Node.js/Express backend.
 
+**Live:** [loanclear-app.netlify.app](https://loanclear-app.netlify.app) (frontend) · [loanclear-backend-production.up.railway.app](https://loanclear-backend-production.up.railway.app) (backend API)
+
 ## Structure
 
 ```
