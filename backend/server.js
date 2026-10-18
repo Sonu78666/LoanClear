@@ -109,14 +109,30 @@ app.post('/api/chat', perMinuteLimiter, dailyLimiter(DAILY_LIMIT_PER_IP), chatVa
     const systemPrompt = buildSystemPrompt(loanContext, language);
     const history = prunedHistory(session, 8);
 
+    const createCompletion = (msgs) =>
+      groq.chat.completions.create({
+        model: 'openai/gpt-oss-20b',
+        max_tokens: MAX_TOKENS_PER_REPLY,
+        reasoning_effort: 'medium',
+        tools: loanTools,
+        messages: msgs,
+      });
+
+    // The model occasionally emits a malformed tool call (e.g. missing fields on a
+    // second/follow-up call within the same turn); Groq rejects that generation
+    // outright rather than passing it through. One retry resolves it in practice
+    // without failing the whole request.
+    const createCompletionWithRetry = async (msgs) => {
+      try {
+        return await createCompletion(msgs);
+      } catch (e) {
+        logger.warn('completion_retry', { sessionId, message: e.message });
+        return createCompletion(msgs);
+      }
+    };
+
     const messages = [{ role: 'system', content: systemPrompt }, ...history];
-    let completion = await groq.chat.completions.create({
-      model: 'openai/gpt-oss-20b',
-      max_tokens: MAX_TOKENS_PER_REPLY,
-      reasoning_effort: 'medium',
-      tools: loanTools,
-      messages,
-    });
+    let completion = await createCompletionWithRetry(messages);
 
     let responseMessage = completion.choices?.[0]?.message;
     let toolRounds = 0;
@@ -136,17 +152,26 @@ app.post('/api/chat', perMinuteLimiter, dailyLimiter(DAILY_LIMIT_PER_IP), chatVa
       }
 
       toolRounds += 1;
-      completion = await groq.chat.completions.create({
-        model: 'openai/gpt-oss-20b',
-        max_tokens: MAX_TOKENS_PER_REPLY,
-        reasoning_effort: 'medium',
-        tools: loanTools,
-        messages,
-      });
+      completion = await createCompletionWithRetry(messages);
       responseMessage = completion.choices?.[0]?.message;
     }
 
-    const reply = responseMessage?.content?.trim() || '';
+    let reply = responseMessage?.content?.trim() || '';
+
+    // Occasionally the model's final turn comes back with no text content at
+    // all (it used its whole token budget on internal reasoning). One retry
+    // of the same final call usually produces real text.
+    if (!reply) {
+      logger.warn('empty_reply_retry', { sessionId });
+      completion = await createCompletionWithRetry(messages);
+      reply = completion.choices?.[0]?.message?.content?.trim() || '';
+    }
+
+    if (!reply) {
+      logger.error('server_error', { ip, sessionId, reason: 'empty reply after retry' });
+      return res.status(502).json({ error: 'AI service error. Please try again.' });
+    }
+
     appendToHistory(session, 'assistant', reply);
 
     const dailyRemaining = getDailyRemaining(ip, DAILY_LIMIT_PER_IP);
