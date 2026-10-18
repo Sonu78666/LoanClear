@@ -526,6 +526,15 @@
 
   <!-- TAB 2: Early Closure Planner -->
   <section class="tab-panel" id="tab-planner">
+    <div class="card">
+      <h2 class="section-title">Loan details</h2>
+      <div class="planner-inputs">
+        <div class="field"><label>Loan amount (₹)</label><input type="number" id="plannerAmount" min="100000" max="10000000" step="10000"></div>
+        <div class="field"><label>Interest rate (%)</label><input type="number" id="plannerRate" min="5" max="20" step="0.05"></div>
+        <div class="field"><label>Tenure (years)</label><input type="number" id="plannerTenure" min="1" max="30" step="1"></div>
+      </div>
+    </div>
+
     <div class="context-pill" id="plannerContextPill" style="margin-bottom: 16px;">● Loan context loading…</div>
 
     <div class="card">
@@ -927,9 +936,16 @@ function renderPlanner() {
   const { amount, rate, tenure } = loanState;
   const { lumpSum, extraMonthly, annualHike, prepayMonth } = getPlannerInputs();
 
+  const amountField = document.getElementById('plannerAmount');
+  const rateField = document.getElementById('plannerRate');
+  const tenureField = document.getElementById('plannerTenure');
+  if (document.activeElement !== amountField) amountField.value = amount;
+  if (document.activeElement !== rateField) rateField.value = rate;
+  if (document.activeElement !== tenureField) tenureField.value = tenure;
+
   const plannerPill = document.getElementById('plannerContextPill');
   if (plannerPill) {
-    plannerPill.textContent = `● Calculating for: ${formatINR(amount)} · ${rate.toFixed(2)}% · ${tenure}yr · EMI ${formatINR(loanState.emi)} (set on the EMI Calculator tab)`;
+    plannerPill.textContent = `● Calculating for: ${formatINR(amount)} · ${rate.toFixed(2)}% · ${tenure}yr · EMI ${formatINR(loanState.emi)}`;
   }
 
   const base = simulateWithPrepayment(amount, rate, tenure, {});
@@ -1028,6 +1044,30 @@ function renderBalanceChart(base, strategies, labels) {
 
 ['lumpSum', 'extraMonthly', 'annualHike', 'prepayMonth'].forEach((id) => {
   document.getElementById(id).addEventListener('input', renderPlanner);
+});
+
+function clampTo(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+// Editing the loan amount/rate/tenure here updates the same shared loan state
+// as the EMI Calculator tab's sliders (and the AI Chat context), so the whole
+// app stays in sync regardless of which tab you edit from. Synced on 'change'
+// (blur/Enter), not 'input', so clamping doesn't interrupt mid-typing.
+document.getElementById('plannerAmount').addEventListener('change', (e) => {
+  amountSlider.value = clampTo(Number(e.target.value) || loanState.amount, 100000, 10000000);
+  renderCalculator();
+  renderPlanner();
+});
+document.getElementById('plannerRate').addEventListener('change', (e) => {
+  rateSlider.value = clampTo(Number(e.target.value) || loanState.rate, 5, 20);
+  renderCalculator();
+  renderPlanner();
+});
+document.getElementById('plannerTenure').addEventListener('change', (e) => {
+  tenureSlider.value = clampTo(Number(e.target.value) || loanState.tenure, 1, 30);
+  renderCalculator();
+  renderPlanner();
 });
 
 // ============================================================
