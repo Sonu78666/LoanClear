@@ -526,6 +526,8 @@
 
   <!-- TAB 2: Early Closure Planner -->
   <section class="tab-panel" id="tab-planner">
+    <div class="context-pill" id="plannerContextPill" style="margin-bottom: 16px;">● Loan context loading…</div>
+
     <div class="card">
       <h2 class="section-title">Prepayment inputs</h2>
       <div class="planner-inputs">
@@ -924,6 +926,11 @@ function getPlannerInputs() {
 function renderPlanner() {
   const { amount, rate, tenure } = loanState;
   const { lumpSum, extraMonthly, annualHike, prepayMonth } = getPlannerInputs();
+
+  const plannerPill = document.getElementById('plannerContextPill');
+  if (plannerPill) {
+    plannerPill.textContent = `● Calculating for: ${formatINR(amount)} · ${rate.toFixed(2)}% · ${tenure}yr · EMI ${formatINR(loanState.emi)} (set on the EMI Calculator tab)`;
+  }
 
   const base = simulateWithPrepayment(amount, rate, tenure, {});
   const strategies = {
