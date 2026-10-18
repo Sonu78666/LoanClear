@@ -191,6 +191,14 @@
   }
 
   /* ---- Tab 1 ---- */
+  .calc-actions { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .calc-action-btn {
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+    padding: 9px 16px; border-radius: 999px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: var(--font-ui);
+  }
+  .calc-action-btn:hover { border-color: var(--accent); color: var(--accent); }
+
   .calc-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -487,6 +495,29 @@
   .faq-item:last-child { margin-bottom: 0; }
   .faq-item h3 { font-size: 14px; margin: 0 0 6px; }
   .faq-item p { font-size: 13.5px; color: var(--text-dim); line-height: 1.6; margin: 0; }
+
+  @media print {
+    /* Must match/beat :root[data-theme="dark"]'s specificity, and !important to
+       actually win — a bare :root here would otherwise lose to that rule. */
+    :root, :root[data-theme="dark"], :root[data-theme="light"] {
+      --bg: #ffffff !important;
+      --surface: #ffffff !important;
+      --surface-2: #f5f4fa !important;
+      --text: #15171e !important;
+      --text-dim: #555b6e !important;
+      --border: rgba(0, 0, 0, 0.15) !important;
+      --shadow: none !important;
+    }
+    body { background: #fff; }
+    .navbar, .no-print, .intro-text, .faq-section, footer, .theme-toggle { display: none !important; }
+    .tab-panel { display: none !important; }
+    .tab-panel.active { display: block !important; }
+    main { max-width: 100%; padding: 0; }
+    .card, .chart-box, .amort-wrap { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
+    .result-card { background: #f3f1ff !important; color: #15171e !important; }
+    .result-card .meta-box { background: rgba(124, 110, 245, 0.1) !important; }
+    .meta-box.interest .meta-value { color: #b3261e !important; }
+  }
 </style>
 </head>
 <body>
@@ -513,6 +544,10 @@
 
   <!-- TAB 1: EMI Calculator -->
   <section class="tab-panel active" id="tab-calculator">
+    <div class="calc-actions no-print">
+      <button class="calc-action-btn" id="shareLinkBtn">🔗 Share this scenario</button>
+      <button class="calc-action-btn" id="printSummaryBtn">🖨️ Print / Save as PDF</button>
+    </div>
     <div class="calc-grid">
       <div class="card">
         <h2 class="section-title">Loan details</h2>
@@ -1072,6 +1107,50 @@ function renderStackedBar(years) {
   el.addEventListener('input', renderCalculator);
 });
 
+// Shareable link: encodes the current loan into the URL so pasting it
+// elsewhere (or bookmarking it) reopens the calculator pre-filled.
+function buildShareURL() {
+  const params = new URLSearchParams({
+    amt: loanState.amount,
+    rate: loanState.rate,
+    yrs: loanState.tenure,
+    type: loanState.loanType,
+    mode: loanMode,
+  });
+  return window.location.origin + window.location.pathname + '?' + params.toString();
+}
+
+async function copyShareLink() {
+  const url = buildShareURL();
+  try {
+    await navigator.clipboard.writeText(url);
+    showAlert('Link copied! Paste it anywhere to share this exact loan scenario.', 'warning');
+  } catch (e) {
+    showAlert('Could not copy automatically — copy this link: ' + url);
+  }
+}
+
+function loadStateFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has('amt')) return;
+
+  const amount = clampTo(Number(params.get('amt')) || loanState.amount, 100000, 10000000);
+  const rate = clampTo(Number(params.get('rate')) || loanState.rate, 5, 20);
+  const tenure = clampTo(Number(params.get('yrs')) || loanState.tenure, 1, 30);
+  const type = params.get('type') === 'fixed' ? 'fixed' : 'floating';
+  const mode = params.get('mode') === 'existing' ? 'existing' : 'new';
+
+  amountSlider.value = amount;
+  rateSlider.value = rate;
+  tenureSlider.value = tenure;
+  loanTypeSelect.value = type;
+  renderCalculator();
+  applyLoanMode(mode);
+}
+
+document.getElementById('shareLinkBtn').addEventListener('click', copyShareLink);
+document.getElementById('printSummaryBtn').addEventListener('click', () => window.print());
+
 // ============================================================
 // Tab 2: Early Closure Planner
 // ============================================================
@@ -1564,6 +1643,7 @@ applyStrategyTab('lumpSumOnly');
 applyLoanMode('new');
 renderCompareCards();
 renderCompareResults();
+loadStateFromURL();
 </script>
 </body>
 </html>

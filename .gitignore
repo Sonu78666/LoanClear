@@ -4,3 +4,4 @@ backend/logs/*.log
 backend.log
 .DS_Store
 .netlify/
+.playwright-mcp/
