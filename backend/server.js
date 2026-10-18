@@ -12,6 +12,7 @@ const { checkInjection, checkOffTopic } = require('./middleware/injectionCheck')
 const { dailyLimiter, getDailyRemaining } = require('./middleware/dailyLimiter');
 const { getOrCreateSession, appendToHistory, prunedHistory } = require('./middleware/sessionStore');
 const { buildSystemPrompt } = require('./systemPrompt');
+const { loanTools, runLoanScenarioTool } = require('./loanTool');
 
 const app = express();
 
@@ -108,14 +109,44 @@ app.post('/api/chat', perMinuteLimiter, dailyLimiter(DAILY_LIMIT_PER_IP), chatVa
     const systemPrompt = buildSystemPrompt(loanContext, language);
     const history = prunedHistory(session, 8);
 
-    const completion = await groq.chat.completions.create({
+    const messages = [{ role: 'system', content: systemPrompt }, ...history];
+    let completion = await groq.chat.completions.create({
       model: 'openai/gpt-oss-20b',
       max_tokens: MAX_TOKENS_PER_REPLY,
       reasoning_effort: 'medium',
-      messages: [{ role: 'system', content: systemPrompt }, ...history],
+      tools: loanTools,
+      messages,
     });
 
-    const reply = completion.choices?.[0]?.message?.content?.trim() || '';
+    let responseMessage = completion.choices?.[0]?.message;
+    let toolRounds = 0;
+
+    while (responseMessage?.tool_calls?.length && toolRounds < 3) {
+      messages.push(responseMessage);
+
+      for (const toolCall of responseMessage.tool_calls) {
+        let result;
+        try {
+          const args = JSON.parse(toolCall.function.arguments || '{}');
+          result = runLoanScenarioTool(loanContext, args);
+        } catch (e) {
+          result = { error: 'Calculation failed.' };
+        }
+        messages.push({ role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify(result) });
+      }
+
+      toolRounds += 1;
+      completion = await groq.chat.completions.create({
+        model: 'openai/gpt-oss-20b',
+        max_tokens: MAX_TOKENS_PER_REPLY,
+        reasoning_effort: 'medium',
+        tools: loanTools,
+        messages,
+      });
+      responseMessage = completion.choices?.[0]?.message;
+    }
+
+    const reply = responseMessage?.content?.trim() || '';
     appendToHistory(session, 'assistant', reply);
 
     const dailyRemaining = getDailyRemaining(ip, DAILY_LIMIT_PER_IP);

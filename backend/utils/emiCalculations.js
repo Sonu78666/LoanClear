@@ -46,10 +46,12 @@ function yearlyFromMonthly(monthly) {
 
 /**
  * Simulates a loan with optional prepayment strategies.
- * options: { lumpSum, lumpSumMonth, extraMonthly, annualHikePercent }
+ * options: { lumpSum, lumpSumMonth, extraMonthly, annualHikePercent, annualLumpSum }
+ * annualLumpSum is a recurring extra payment applied at the end of every 12th month
+ * (e.g. "₹3 lakh extra every year"), distinct from the one-time `lumpSum`.
  */
 function simulateWithPrepayment(principal, annualRate, tenureYears, options = {}) {
-  const { lumpSum = 0, lumpSumMonth = 0, extraMonthly = 0, annualHikePercent = 0 } = options;
+  const { lumpSum = 0, lumpSumMonth = 0, extraMonthly = 0, annualHikePercent = 0, annualLumpSum = 0 } = options;
   const r = annualRate / 12 / 100;
   const baseN = tenureYears * 12;
   const baseEmi = computeEMI(principal, annualRate, tenureYears);
@@ -75,6 +77,10 @@ function simulateWithPrepayment(principal, annualRate, tenureYears, options = {}
 
     if (month === lumpSumMonth && lumpSum > 0) {
       principalPaid += lumpSum;
+    }
+
+    if (annualLumpSum > 0 && month % 12 === 0) {
+      principalPaid += annualLumpSum;
     }
 
     if (principalPaid > balance) principalPaid = balance;
