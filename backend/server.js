@@ -208,5 +208,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  logger.info(`LoanClear backend listening on port ${PORT}`);
+  logger.info(`LoanNiti backend listening on port ${PORT}`);
 });

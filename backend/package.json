@@ -1,7 +1,7 @@
 {
-  "name": "loanclear-backend",
+  "name": "loanniti-backend",
   "version": "1.0.0",
-  "description": "LoanClear EMI calculator backend (AI chat + security middleware)",
+  "description": "LoanNiti EMI calculator backend (AI chat + security middleware)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

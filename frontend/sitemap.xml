@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://loanclear-app.netlify.app/</loc>
+    <loc>https://loanniti-app.netlify.app/</loc>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://loanclear-app.netlify.app/guides/emi-calculator-guide.html</loc>
+    <loc>https://loanniti-app.netlify.app/guides/emi-calculator-guide.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://loanclear-app.netlify.app/guides/home-loan-prepayment-guide.html</loc>
+    <loc>https://loanniti-app.netlify.app/guides/home-loan-prepayment-guide.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://loanclear-app.netlify.app/guides/hdfc-home-loan-prepayment-process.html</loc>
+    <loc>https://loanniti-app.netlify.app/guides/hdfc-home-loan-prepayment-process.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://loanclear-app.netlify.app/sitemap.xml
+Sitemap: https://loanniti-app.netlify.app/sitemap.xml

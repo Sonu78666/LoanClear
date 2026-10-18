@@ -10,7 +10,7 @@ function buildSystemPrompt(loanContext, language = 'hinglish') {
   const { amount, rate, tenure, loanType, emi, totalInterest } = loanContext;
   const languageInstruction = LANGUAGE_INSTRUCTIONS[language] || LANGUAGE_INSTRUCTIONS.hinglish;
 
-  return `You are the LoanClear assistant, a helpful loan/EMI guide for Indian borrowers.
+  return `You are the LoanNiti assistant, a helpful loan/EMI guide for Indian borrowers.
 
 RESPONSE LANGUAGE: ${languageInstruction}. This is the user's own language preference, chosen explicitly in the app's UI — not a request from their message. Follow it for every single reply in this conversation, regardless of what script or language the user's own question is written in.
 

@@ -3,23 +3,23 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>LoanClear – Free EMI Calculator & Home Loan Prepayment Planner</title>
+<title>LoanNiti – Free EMI Calculator & Home Loan Prepayment Planner</title>
 <meta name="description" content="Free EMI calculator with a home loan prepayment/foreclosure planner and an AI loan assistant. Calculate your EMI, compare prepayment strategies, see interest saved, and get instant answers on tax benefits in Hinglish, English or Hindi." />
 <meta name="robots" content="index, follow" />
-<link rel="canonical" href="https://loanclear-app.netlify.app/" />
+<link rel="canonical" href="https://loanniti-app.netlify.app/" />
 
 <!-- Open Graph / social sharing -->
 <meta property="og:type" content="website" />
-<meta property="og:site_name" content="LoanClear" />
-<meta property="og:title" content="LoanClear – Free EMI Calculator & Home Loan Prepayment Planner" />
+<meta property="og:site_name" content="LoanNiti" />
+<meta property="og:title" content="LoanNiti – Free EMI Calculator & Home Loan Prepayment Planner" />
 <meta property="og:description" content="Calculate your home loan EMI, compare prepayment strategies to save interest, and chat with an AI loan assistant in Hinglish, English or Hindi." />
-<meta property="og:url" content="https://loanclear-app.netlify.app/" />
+<meta property="og:url" content="https://loanniti-app.netlify.app/" />
 <meta property="og:locale" content="en_IN" />
 <meta name="twitter:card" content="summary" />
-<meta name="twitter:title" content="LoanClear – Free EMI Calculator & Home Loan Prepayment Planner" />
+<meta name="twitter:title" content="LoanNiti – Free EMI Calculator & Home Loan Prepayment Planner" />
 <meta name="twitter:description" content="Calculate your home loan EMI, compare prepayment strategies to save interest, and chat with an AI loan assistant in Hinglish, English or Hindi." />
 
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://www.googletagmanager.com; img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com; connect-src 'self' https://loanclear-backend-production.up.railway.app https://www.google-analytics.com https://www.googletagmanager.com https://region1.google-analytics.com;" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://www.googletagmanager.com; img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com; connect-src 'self' https://loanniti-backend-production.up.railway.app https://www.google-analytics.com https://www.googletagmanager.com https://region1.google-analytics.com;" />
 
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-N48QHZ2RHR"></script>
@@ -37,8 +37,8 @@
 {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "name": "LoanClear",
-  "url": "https://loanclear-app.netlify.app/",
+  "name": "LoanNiti",
+  "url": "https://loanniti-app.netlify.app/",
   "description": "Free EMI calculator with a home loan prepayment/foreclosure planner and an AI loan assistant for Indian borrowers.",
   "applicationCategory": "FinanceApplication",
   "operatingSystem": "Any",
@@ -443,7 +443,7 @@
 <body>
 
 <nav class="navbar">
-  <div class="logo">LoanClear</div>
+  <div class="logo">LoanNiti</div>
   <div class="nav-tabs">
     <button class="tab-btn active" data-tab="calculator">EMI Calculator</button>
     <button class="tab-btn" data-tab="planner">Early Closure Planner</button>
@@ -455,7 +455,7 @@
 <main>
 
   <p class="intro-text">
-    <strong>LoanClear</strong> is a free online EMI calculator for home loans, car loans and personal loans in India.
+    <strong>LoanNiti</strong> is a free online EMI calculator for home loans, car loans and personal loans in India.
     Instantly calculate your monthly EMI, see a full amortization schedule, plan a home loan prepayment or foreclosure
     strategy to save on interest, and ask an AI loan assistant about EMI, prepayment charges and tax benefits — in
     Hinglish, English or Hindi.
@@ -629,7 +629,7 @@
 // ============================================================
 // Constants
 // ============================================================
-const BACKEND_URL = 'https://loanclear-backend-production.up.railway.app';
+const BACKEND_URL = 'https://loanniti-backend-production.up.railway.app';
 const MAX_INPUT_CHARS = 400;
 const MAX_MESSAGES_PER_SESSION = 10;
 const COOLDOWN_SECONDS = 3;
@@ -740,11 +740,11 @@ const themeToggle = document.getElementById('themeToggle');
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   themeToggle.textContent = theme === 'dark' ? '🌙' : '☀️';
-  try { localStorage.setItem('loanclear-theme', theme); } catch (e) {}
+  try { localStorage.setItem('loanniti-theme', theme); } catch (e) {}
 }
 (function initTheme() {
   let saved = 'dark';
-  try { saved = localStorage.getItem('loanclear-theme') || 'dark'; } catch (e) {}
+  try { saved = localStorage.getItem('loanniti-theme') || 'dark'; } catch (e) {}
   applyTheme(saved);
 })();
 themeToggle.addEventListener('click', () => {
@@ -1051,7 +1051,7 @@ function getSelectedLanguage() {
 
 (function initLanguage() {
   let saved = 'hinglish';
-  try { saved = localStorage.getItem('loanclear-lang') || 'hinglish'; } catch (e) {}
+  try { saved = localStorage.getItem('loanniti-lang') || 'hinglish'; } catch (e) {}
   langSelect.value = saved;
   applyLanguageText(saved);
 })();
@@ -1064,7 +1064,7 @@ function applyLanguageText(lang) {
 
 langSelect.addEventListener('change', () => {
   const lang = getSelectedLanguage();
-  try { localStorage.setItem('loanclear-lang', lang); } catch (e) {}
+  try { localStorage.setItem('loanniti-lang', lang); } catch (e) {}
   applyLanguageText(lang);
 });
 
