@@ -295,12 +295,31 @@
   tbody td { padding: 9px 12px; text-align: right; font-family: var(--font-mono); border-top: 1px solid var(--border); }
 
   /* ---- Tab 2 ---- */
+  .planner-subtitle { font-size: 13px; color: var(--text-dim); margin: -8px 0 16px; }
+  .strategy-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+  .strategy-tab {
+    font-family: var(--font-ui);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .strategy-tab:hover { color: var(--text); }
+  .strategy-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
   .planner-inputs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
   @media (max-width: 760px) { .planner-inputs { grid-template-columns: 1fr 1fr; } }
   .field label { display: block; font-size: 12.5px; color: var(--text-dim); font-weight: 600; margin-bottom: 6px; }
+  .field-hint { font-size: 11.5px; color: var(--text-dim); margin: 6px 0 0; opacity: 0.8; }
 
   .strategy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 22px; }
-  @media (max-width: 760px) { .strategy-grid { grid-template-columns: 1fr; } }
+  .strategy-grid > div:last-child { grid-column: 1 / -1; }
+  @media (max-width: 760px) { .strategy-grid { grid-template-columns: 1fr; } .strategy-grid > div:last-child { grid-column: auto; } }
   .strategy-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -309,6 +328,7 @@
     position: relative;
   }
   .strategy-card.best { border-color: var(--green); box-shadow: 0 0 0 1px var(--green); }
+  .strategy-card.focused { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
   .best-badge {
     position: absolute; top: -10px; right: 14px;
     background: var(--green); color: #06230f;
@@ -539,11 +559,40 @@
 
     <div class="card">
       <h2 class="section-title">Prepayment inputs</h2>
+      <p class="planner-subtitle">Pick how you'll prepay — only the fields that strategy needs will show.</p>
+      <div class="strategy-tabs" id="strategyTabs">
+        <button class="strategy-tab active" data-strategy="lumpSumOnly">One-time</button>
+        <button class="strategy-tab" data-strategy="extraMonthlyOnly">Monthly</button>
+        <button class="strategy-tab" data-strategy="annualLumpSumOnly">Yearly</button>
+        <button class="strategy-tab" data-strategy="annualHikeOnly">Step-up EMI</button>
+        <button class="strategy-tab" data-strategy="combined">Combined</button>
+      </div>
       <div class="planner-inputs">
-        <div class="field"><label>Lump sum (₹)</label><input type="number" id="lumpSum" value="500000" min="0"></div>
-        <div class="field"><label>Extra monthly (₹)</label><input type="number" id="extraMonthly" value="5000" min="0"></div>
-        <div class="field"><label>Annual EMI hike (%)</label><input type="number" id="annualHike" value="5" min="0" max="50"></div>
-        <div class="field"><label>Prepay in month #</label><input type="number" id="prepayMonth" value="12" min="1"></div>
+        <div class="field" data-for="lumpSumOnly combined">
+          <label>One-time payment (₹)</label>
+          <input type="number" id="lumpSum" value="500000" min="0">
+          <p class="field-hint">Paid once — a bonus, maturity payout, etc.</p>
+        </div>
+        <div class="field" data-for="lumpSumOnly combined">
+          <label>…in month #</label>
+          <input type="number" id="prepayMonth" value="12" min="1">
+          <p class="field-hint">Which month you'll make that one payment.</p>
+        </div>
+        <div class="field" data-for="extraMonthlyOnly combined">
+          <label>Extra every month (₹)</label>
+          <input type="number" id="extraMonthly" value="5000" min="0">
+          <p class="field-hint">Added on top of your EMI, every single month.</p>
+        </div>
+        <div class="field" data-for="annualLumpSumOnly combined">
+          <label>Extra every year (₹)</label>
+          <input type="number" id="annualLumpSum" value="300000" min="0">
+          <p class="field-hint">A recurring payment once a year — e.g. from an annual bonus.</p>
+        </div>
+        <div class="field" data-for="annualHikeOnly combined">
+          <label>EMI increase per year (%)</label>
+          <input type="number" id="annualHike" value="5" min="0" max="50">
+          <p class="field-hint">Your EMI itself goes up by this % every 12 months.</p>
+        </div>
       </div>
     </div>
 
@@ -711,7 +760,7 @@ function yearlyFromMonthly(monthly) {
 }
 
 function simulateWithPrepayment(principal, annualRate, tenureYears, options = {}) {
-  const { lumpSum = 0, lumpSumMonth = 0, extraMonthly = 0, annualHikePercent = 0 } = options;
+  const { lumpSum = 0, lumpSumMonth = 0, extraMonthly = 0, annualHikePercent = 0, annualLumpSum = 0 } = options;
   const r = annualRate / 12 / 100;
   const baseN = tenureYears * 12;
   const baseEmi = computeEMI(principal, annualRate, tenureYears);
@@ -734,6 +783,9 @@ function simulateWithPrepayment(principal, annualRate, tenureYears, options = {}
 
     if (month === lumpSumMonth && lumpSum > 0) {
       principalPaid += lumpSum;
+    }
+    if (annualLumpSum > 0 && month % 12 === 0) {
+      principalPaid += annualLumpSum;
     }
     if (principalPaid > balance) principalPaid = balance;
     if (principalPaid < 0) principalPaid = 0;
@@ -923,18 +975,38 @@ function renderStackedBar(years) {
 // ============================================================
 // Tab 2: Early Closure Planner
 // ============================================================
+let activeStrategyTab = 'lumpSumOnly';
+
 function getPlannerInputs() {
   return {
     lumpSum: Number(document.getElementById('lumpSum').value) || 0,
     extraMonthly: Number(document.getElementById('extraMonthly').value) || 0,
+    annualLumpSum: Number(document.getElementById('annualLumpSum').value) || 0,
     annualHike: Number(document.getElementById('annualHike').value) || 0,
     prepayMonth: Number(document.getElementById('prepayMonth').value) || 1,
   };
 }
 
+function applyStrategyTab(strategy) {
+  activeStrategyTab = strategy;
+  document.querySelectorAll('.strategy-tab').forEach((tab) => {
+    tab.classList.toggle('active', tab.dataset.strategy === strategy);
+  });
+  document.querySelectorAll('.planner-inputs .field[data-for]').forEach((field) => {
+    const shows = field.dataset.for.split(' ').includes(strategy);
+    field.style.display = shows ? '' : 'none';
+  });
+  renderPlanner();
+}
+
+document.getElementById('strategyTabs').addEventListener('click', (e) => {
+  const tab = e.target.closest('.strategy-tab');
+  if (tab) applyStrategyTab(tab.dataset.strategy);
+});
+
 function renderPlanner() {
   const { amount, rate, tenure } = loanState;
-  const { lumpSum, extraMonthly, annualHike, prepayMonth } = getPlannerInputs();
+  const { lumpSum, extraMonthly, annualLumpSum, annualHike, prepayMonth } = getPlannerInputs();
 
   const amountField = document.getElementById('plannerAmount');
   const rateField = document.getElementById('plannerRate');
@@ -952,14 +1024,16 @@ function renderPlanner() {
   const strategies = {
     lumpSumOnly: simulateWithPrepayment(amount, rate, tenure, { lumpSum, lumpSumMonth: prepayMonth }),
     extraMonthlyOnly: simulateWithPrepayment(amount, rate, tenure, { extraMonthly }),
+    annualLumpSumOnly: simulateWithPrepayment(amount, rate, tenure, { annualLumpSum }),
     annualHikeOnly: simulateWithPrepayment(amount, rate, tenure, { annualHikePercent: annualHike }),
-    combined: simulateWithPrepayment(amount, rate, tenure, { lumpSum, lumpSumMonth: prepayMonth, extraMonthly, annualHikePercent: annualHike }),
+    combined: simulateWithPrepayment(amount, rate, tenure, { lumpSum, lumpSumMonth: prepayMonth, extraMonthly, annualLumpSum, annualHikePercent: annualHike }),
   };
 
   const labels = {
-    lumpSumOnly: 'Lump sum only',
-    extraMonthlyOnly: 'Extra monthly only',
-    annualHikeOnly: 'Annual hike only',
+    lumpSumOnly: 'One-time payment',
+    extraMonthlyOnly: 'Extra every month',
+    annualLumpSumOnly: 'Extra every year',
+    annualHikeOnly: 'Step-up EMI',
     combined: 'Combined strategy',
   };
 
@@ -976,8 +1050,9 @@ function renderPlanner() {
     const monthsSaved = base.months - s.months;
     const closeYear = new Date().getFullYear() + Math.ceil(s.months / 12);
     const isBest = key === bestKey;
+    const isFocused = key === activeStrategyTab;
     return `
-      <div class="strategy-card ${isBest ? 'best' : ''}">
+      <div class="strategy-card ${isBest ? 'best' : ''} ${isFocused ? 'focused' : ''}">
         ${isBest ? '<div class="best-badge">BEST SAVING</div>' : ''}
         <h5>${labels[key]}</h5>
         <div class="strategy-stat saved"><span>Interest saved</span><span class="v mono">${formatINR(saved)}</span></div>
@@ -1280,6 +1355,7 @@ document.querySelectorAll('.suggestion-chip').forEach((chip) => {
 // ============================================================
 renderCalculator();
 updateContextPill();
+applyStrategyTab('lumpSumOnly');
 </script>
 </body>
 </html>
