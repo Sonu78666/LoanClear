@@ -3,12 +3,71 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>LoanClear — EMI Calculator</title>
+<title>LoanClear – Free EMI Calculator & Home Loan Prepayment Planner</title>
+<meta name="description" content="Free EMI calculator with a home loan prepayment/foreclosure planner and an AI loan assistant. Calculate your EMI, compare prepayment strategies, see interest saved, and get instant answers on tax benefits in Hinglish, English or Hindi." />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="https://loanclear-app.netlify.app/" />
+
+<!-- Open Graph / social sharing -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="LoanClear" />
+<meta property="og:title" content="LoanClear – Free EMI Calculator & Home Loan Prepayment Planner" />
+<meta property="og:description" content="Calculate your home loan EMI, compare prepayment strategies to save interest, and chat with an AI loan assistant in Hinglish, English or Hindi." />
+<meta property="og:url" content="https://loanclear-app.netlify.app/" />
+<meta property="og:locale" content="en_IN" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="LoanClear – Free EMI Calculator & Home Loan Prepayment Planner" />
+<meta name="twitter:description" content="Calculate your home loan EMI, compare prepayment strategies to save interest, and chat with an AI loan assistant in Hinglish, English or Hindi." />
+
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self' https://loanclear-backend-production.up.railway.app;" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "LoanClear",
+  "url": "https://loanclear-app.netlify.app/",
+  "description": "Free EMI calculator with a home loan prepayment/foreclosure planner and an AI loan assistant for Indian borrowers.",
+  "applicationCategory": "FinanceApplication",
+  "operatingSystem": "Any",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How is home loan EMI calculated?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "EMI is calculated using the formula P x r x (1+r)^n / ((1+r)^n - 1), where P is the loan principal, r is the monthly interest rate (annual rate / 12 / 100), and n is the number of monthly installments (tenure in years x 12)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is there a penalty for prepaying a home loan in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "As per RBI rules, floating-rate loans to individual borrowers (such as most home loans) carry no prepayment or foreclosure penalty. Fixed-rate loans may carry a prepayment charge of up to 2%."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What tax benefits are available on a home loan?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Principal repayment qualifies for deduction under Section 80C (up to Rs 1.5 lakh/year), and interest paid qualifies for deduction under Section 24(b) (up to Rs 2 lakh/year for a self-occupied property)."
+      }
+    }
+  ]
+}
+</script>
 <style>
   :root {
     --font-ui: 'DM Sans', sans-serif;
@@ -355,6 +414,21 @@
   @keyframes slideIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
 
   h2.section-title { font-size: 16px; margin: 0 0 16px; }
+
+  .intro-text {
+    color: var(--text-dim);
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 860px;
+    margin: 0 0 22px;
+  }
+  .intro-text strong { color: var(--text); }
+
+  .faq-section { margin-top: 24px; }
+  .faq-item { margin-bottom: 18px; }
+  .faq-item:last-child { margin-bottom: 0; }
+  .faq-item h3 { font-size: 14px; margin: 0 0 6px; }
+  .faq-item p { font-size: 13.5px; color: var(--text-dim); line-height: 1.6; margin: 0; }
 </style>
 </head>
 <body>
@@ -370,6 +444,13 @@
 </nav>
 
 <main>
+
+  <p class="intro-text">
+    <strong>LoanClear</strong> is a free online EMI calculator for home loans, car loans and personal loans in India.
+    Instantly calculate your monthly EMI, see a full amortization schedule, plan a home loan prepayment or foreclosure
+    strategy to save on interest, and ask an AI loan assistant about EMI, prepayment charges and tax benefits — in
+    Hinglish, English or Hindi.
+  </p>
 
   <!-- TAB 1: EMI Calculator -->
   <section class="tab-panel active" id="tab-calculator">
@@ -496,6 +577,22 @@
         <div class="char-counter" id="charCounter">400 characters left</div>
         <div class="cooldown-overlay" id="cooldownOverlay"></div>
       </div>
+    </div>
+  </section>
+
+  <section class="faq-section card">
+    <h2 class="section-title">Frequently asked questions</h2>
+    <div class="faq-item">
+      <h3>How is home loan EMI calculated?</h3>
+      <p>EMI is calculated using the formula P &times; r &times; (1+r)<sup>n</sup> / ((1+r)<sup>n</sup> &minus; 1), where P is the loan principal, r is the monthly interest rate (annual rate &divide; 12 &divide; 100), and n is the number of monthly installments (tenure in years &times; 12).</p>
+    </div>
+    <div class="faq-item">
+      <h3>Is there a penalty for prepaying a home loan in India?</h3>
+      <p>As per RBI rules, floating-rate loans to individual borrowers (such as most home loans) carry no prepayment or foreclosure penalty. Fixed-rate loans may carry a prepayment charge of up to 2%.</p>
+    </div>
+    <div class="faq-item">
+      <h3>What tax benefits are available on a home loan?</h3>
+      <p>Principal repayment qualifies for deduction under Section 80C (up to &#8377;1.5 lakh/year), and interest paid qualifies for deduction under Section 24(b) (up to &#8377;2 lakh/year for a self-occupied property).</p>
     </div>
   </section>
 
@@ -1080,7 +1177,11 @@ async function sendMessage(text) {
       return;
     }
 
-    appendMessage('assistant', data.reply);
+    if (data.reply) {
+      appendMessage('assistant', data.reply);
+    } else {
+      showAlert('No response from the assistant. Please try again.');
+    }
   } catch (err) {
     hideTyping();
     showAlert('Could not reach the server. Please try again.');
