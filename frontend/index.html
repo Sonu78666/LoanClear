@@ -347,6 +347,35 @@
   .bar-fill { height: 100%; background: var(--accent); border-radius: 6px; transition: width 0.3s; }
   .bar-row .bar-value { width: 90px; text-align: right; font-family: var(--font-mono); flex-shrink: 0; }
 
+  /* ---- Compare Loans ---- */
+  .compare-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .compare-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    position: relative;
+  }
+  .compare-card.cheapest { border-color: var(--green); box-shadow: 0 0 0 1px var(--green); }
+  .compare-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .compare-card-header h4 { margin: 0; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+  .compare-swatch { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .compare-remove-btn {
+    background: none; border: none; color: var(--text-dim); cursor: pointer;
+    font-size: 13px; padding: 2px 6px; border-radius: 6px;
+  }
+  .compare-remove-btn:hover { color: var(--red); background: var(--surface-2); }
+  .compare-field { margin-bottom: 12px; }
+  .compare-field label { display: block; font-size: 12px; color: var(--text-dim); font-weight: 600; margin-bottom: 5px; }
+  .add-loan-btn {
+    width: 100%;
+    background: var(--surface-2); border: 1px dashed var(--border); color: var(--text-dim);
+    padding: 12px; border-radius: var(--radius); font-size: 13.5px; font-weight: 600;
+    cursor: pointer; margin-top: 14px; font-family: var(--font-ui);
+  }
+  .add-loan-btn:hover { color: var(--accent); border-color: var(--accent); }
+  #compareTable td.cheapest-cell { color: var(--green); font-weight: 700; }
+
   /* ---- Tab 3 Chat ---- */
   .chat-layout { display: flex; flex-direction: column; gap: 14px; height: 640px; }
   .chat-top-row {
@@ -467,6 +496,7 @@
   <div class="nav-tabs">
     <button class="tab-btn active" data-tab="calculator">EMI Calculator</button>
     <button class="tab-btn" data-tab="planner">Early Closure Planner</button>
+    <button class="tab-btn" data-tab="compare">Compare Loans</button>
     <button class="tab-btn" data-tab="chat">AI Chat</button>
   </div>
   <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
@@ -614,6 +644,30 @@
     <div class="card">
       <h2 class="section-title">Balance over time</h2>
       <canvas id="balanceChart" style="max-height: 320px;"></canvas>
+    </div>
+  </section>
+
+  <!-- TAB: Compare Loans -->
+  <section class="tab-panel" id="tab-compare">
+    <p class="planner-subtitle" style="margin-bottom: 18px;">Comparing different banks, rates or tenures? See EMI and total interest side by side.</p>
+
+    <div class="compare-grid" id="compareLoanCards"></div>
+
+    <button class="add-loan-btn" id="addCompareLoanBtn">+ Compare a 3rd loan</button>
+
+    <div class="card" style="margin-top: 22px;">
+      <h2 class="section-title">Side-by-side comparison</h2>
+      <div class="amort-table-scroll">
+        <table id="compareTable">
+          <thead><tr><th>Loan</th><th>EMI</th><th>Total interest</th><th>Total payment</th></tr></thead>
+          <tbody id="compareTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Total interest compared</h2>
+      <canvas id="compareChart" style="max-height: 280px;"></canvas>
     </div>
   </section>
 
@@ -830,7 +884,7 @@ themeToggle.addEventListener('click', () => {
 
 function refreshChartColors() {
   const color = chartTextColor();
-  [doughnutChart, stackedBarChart, balanceChart].forEach((chart) => {
+  [doughnutChart, stackedBarChart, balanceChart, compareChart].forEach((chart) => {
     if (!chart) return;
     if (chart.options.plugins?.legend?.labels) chart.options.plugins.legend.labels.color = color;
     if (chart.options.scales) {
@@ -852,6 +906,7 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'planner') renderPlanner();
+    if (btn.dataset.tab === 'compare') renderCompareResults();
     if (btn.dataset.tab === 'chat') updateContextPill();
   });
 });
@@ -1191,6 +1246,111 @@ document.getElementById('plannerTenure').addEventListener('change', (e) => {
 });
 
 // ============================================================
+// Tab: Compare Loans
+// ============================================================
+const COMPARE_COLORS = ['#7c6ef5', '#4ade80', '#fbbf24'];
+let compareLoans = [
+  { amount: 2500000, rate: 9.5, tenure: 20 },
+  { amount: 2500000, rate: 8.5, tenure: 20 },
+];
+let compareChart;
+
+function renderCompareCards() {
+  const wrap = document.getElementById('compareLoanCards');
+  wrap.innerHTML = compareLoans.map((loan, i) => `
+    <div class="compare-card" data-index="${i}">
+      <div class="compare-card-header">
+        <h4><span class="compare-swatch" style="background:${COMPARE_COLORS[i]}"></span>Loan ${String.fromCharCode(65 + i)}</h4>
+        ${compareLoans.length > 2 ? `<button class="compare-remove-btn" data-remove="${i}">Remove</button>` : ''}
+      </div>
+      <div class="compare-field"><label>Loan amount (₹)</label><input type="number" class="compare-amount" data-index="${i}" value="${loan.amount}" min="100000" max="100000000" step="10000"></div>
+      <div class="compare-field"><label>Interest rate (%)</label><input type="number" class="compare-rate" data-index="${i}" value="${loan.rate}" min="1" max="30" step="0.05"></div>
+      <div class="compare-field"><label>Tenure (years)</label><input type="number" class="compare-tenure" data-index="${i}" value="${loan.tenure}" min="1" max="30" step="1"></div>
+    </div>
+  `).join('');
+
+  wrap.querySelectorAll('input').forEach((input) => {
+    input.addEventListener('change', (e) => {
+      const i = Number(e.target.dataset.index);
+      const val = Number(e.target.value) || 0;
+      if (e.target.classList.contains('compare-amount')) compareLoans[i].amount = Math.max(100000, Math.min(100000000, val));
+      if (e.target.classList.contains('compare-rate')) compareLoans[i].rate = Math.max(1, Math.min(30, val));
+      if (e.target.classList.contains('compare-tenure')) compareLoans[i].tenure = Math.max(1, Math.min(30, val));
+      e.target.value = e.target.classList.contains('compare-amount') ? compareLoans[i].amount
+        : e.target.classList.contains('compare-rate') ? compareLoans[i].rate : compareLoans[i].tenure;
+      renderCompareResults();
+    });
+  });
+
+  wrap.querySelectorAll('[data-remove]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const i = Number(e.target.dataset.remove);
+      compareLoans.splice(i, 1);
+      document.getElementById('addCompareLoanBtn').style.display = '';
+      renderCompareCards();
+      renderCompareResults();
+    });
+  });
+}
+
+function renderCompareResults() {
+  const results = compareLoans.map((loan) => {
+    const emi = computeEMI(loan.amount, loan.rate, loan.tenure);
+    const totalPayment = emi * loan.tenure * 12;
+    const totalInterest = totalPayment - loan.amount;
+    return { emi, totalInterest, totalPayment };
+  });
+
+  const cheapestIdx = compareLoans.length > 1
+    ? results.reduce((best, r, i) => (r.totalInterest < results[best].totalInterest ? i : best), 0)
+    : -1;
+
+  document.querySelectorAll('.compare-card').forEach((card, i) => {
+    card.classList.toggle('cheapest', i === cheapestIdx);
+  });
+
+  const tbody = document.getElementById('compareTableBody');
+  tbody.innerHTML = results.map((r, i) => `
+    <tr>
+      <td><span class="compare-swatch" style="background:${COMPARE_COLORS[i]}"></span> Loan ${String.fromCharCode(65 + i)}</td>
+      <td class="${i === cheapestIdx ? 'cheapest-cell' : ''}">${formatINR(r.emi)}</td>
+      <td class="${i === cheapestIdx ? 'cheapest-cell' : ''}">${formatINR(r.totalInterest)}</td>
+      <td>${formatINR(r.totalPayment)}</td>
+    </tr>
+  `).join('');
+
+  const color = chartTextColor();
+  const data = {
+    labels: compareLoans.map((_, i) => 'Loan ' + String.fromCharCode(65 + i)),
+    datasets: [{ label: 'Total Interest', data: results.map((r) => Math.round(r.totalInterest)), backgroundColor: compareLoans.map((_, i) => COMPARE_COLORS[i]) }],
+  };
+  const scales = {
+    x: { ticks: { color }, grid: { display: false } },
+    y: { ticks: { color }, grid: { color: 'rgba(128,128,128,0.15)' } },
+  };
+  if (compareChart) {
+    compareChart.data = data;
+    compareChart.options.scales = scales;
+    compareChart.options.plugins.legend.labels.color = color;
+    compareChart.update();
+  } else {
+    compareChart = new Chart(document.getElementById('compareChart'), {
+      type: 'bar',
+      data,
+      options: { plugins: { legend: { display: false, labels: { color } } }, scales },
+    });
+  }
+}
+
+document.getElementById('addCompareLoanBtn').addEventListener('click', () => {
+  if (compareLoans.length >= 3) return;
+  compareLoans.push({ amount: 2500000, rate: 9.5, tenure: 20 });
+  renderCompareCards();
+  renderCompareResults();
+  if (compareLoans.length >= 3) document.getElementById('addCompareLoanBtn').style.display = 'none';
+});
+
+// ============================================================
 // Tab 3: AI Chat
 // ============================================================
 const sessionId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
@@ -1402,6 +1562,8 @@ renderCalculator();
 updateContextPill();
 applyStrategyTab('lumpSumOnly');
 applyLoanMode('new');
+renderCompareCards();
+renderCompareResults();
 </script>
 </body>
 </html>
