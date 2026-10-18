@@ -516,6 +516,12 @@
     .card, .chart-box, .amort-wrap { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
     .result-card { background: #f3f1ff !important; color: #15171e !important; }
     .result-card .meta-box { background: rgba(124, 110, 245, 0.1) !important; }
+    /* The amortization table is a scrollable box on screen (max-height +
+       overflow-y: auto) so it fits the page — but that means print only
+       captures whatever's currently scrolled into view, cutting the table
+       off after a few rows. Let it expand fully instead when printing. */
+    .amort-table-scroll { max-height: none !important; overflow: visible !important; }
+    thead th { position: static !important; }
     .meta-box.interest .meta-value { color: #b3261e !important; }
   }
 </style>
