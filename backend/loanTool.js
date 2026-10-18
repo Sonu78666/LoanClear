@@ -1,5 +1,11 @@
 const { simulateWithPrepayment } = require('./utils/emiCalculations');
 
+// Formats with Indian digit grouping (e.g. 1058993 -> "₹10,58,993"), which the
+// model was getting wrong when asked to insert the commas itself.
+function formatRupeesFull(amount) {
+  return `₹${Math.round(amount).toLocaleString('en-IN')}`;
+}
+
 // A function tool the model calls to get exact loan math instead of estimating
 // it in its own reasoning, which is unreliable for multi-year amortization.
 const loanTools = [
@@ -32,6 +38,16 @@ const loanTools = [
   },
 ];
 
+// Pre-formats "X years Y months" so the model never has to do its own
+// months-to-years-and-months conversion (it was getting this slightly wrong).
+function formatDuration(totalMonths) {
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+  if (years === 0) return `${months} month${months === 1 ? '' : 's'}`;
+  if (months === 0) return `${years} year${years === 1 ? '' : 's'}`;
+  return `${years} year${years === 1 ? '' : 's'} ${months} month${months === 1 ? '' : 's'}`;
+}
+
 function runLoanScenarioTool(loanContext, args = {}) {
   const { amount, rate, tenure } = loanContext;
   const options = {
@@ -44,16 +60,23 @@ function runLoanScenarioTool(loanContext, args = {}) {
 
   const base = simulateWithPrepayment(amount, rate, tenure, {});
   const scenario = simulateWithPrepayment(amount, rate, tenure, options);
+  const monthsSaved = base.months - scenario.months;
+
+  const interestSaved = base.totalInterest - scenario.totalInterest;
 
   return {
     base_total_interest_rupees: Math.round(base.totalInterest),
+    base_total_interest_formatted: formatRupeesFull(base.totalInterest),
     base_payoff_months: base.months,
-    base_payoff_years: Math.round(base.years * 10) / 10,
+    base_payoff_duration: formatDuration(base.months),
     scenario_total_interest_rupees: Math.round(scenario.totalInterest),
+    scenario_total_interest_formatted: formatRupeesFull(scenario.totalInterest),
     scenario_payoff_months: scenario.months,
-    scenario_payoff_years: Math.round(scenario.years * 10) / 10,
-    interest_saved_rupees: Math.round(base.totalInterest - scenario.totalInterest),
-    months_saved: base.months - scenario.months,
+    scenario_payoff_duration: formatDuration(scenario.months),
+    interest_saved_rupees: Math.round(interestSaved),
+    interest_saved_formatted: formatRupeesFull(interestSaved),
+    months_saved: monthsSaved,
+    months_saved_duration: formatDuration(monthsSaved),
   };
 }
 
