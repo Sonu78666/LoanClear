@@ -261,6 +261,10 @@
 
   /* ---- Tab 3 Chat ---- */
   .chat-layout { display: flex; flex-direction: column; gap: 14px; height: 640px; }
+  .chat-top-row {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px;
+  }
   .context-pill {
     display: inline-flex; align-items: center; gap: 8px;
     background: rgba(74, 222, 128, 0.14);
@@ -268,8 +272,18 @@
     color: var(--green);
     padding: 8px 14px; border-radius: 999px;
     font-size: 12.5px; font-family: var(--font-mono);
-    align-self: flex-start;
   }
+  .lang-select-wrap {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12.5px; color: var(--text-dim); font-weight: 600;
+  }
+  .lang-select-wrap select#langSelect {
+    width: auto;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+    padding: 7px 10px; border-radius: 999px; font-family: var(--font-ui); font-size: 12.5px;
+    cursor: pointer; outline: none;
+  }
+  .lang-select-wrap select#langSelect:focus { border-color: var(--accent); }
   .chat-window {
     flex: 1;
     background: var(--surface);
@@ -448,12 +462,22 @@
   <!-- TAB 3: AI Chat -->
   <section class="tab-panel" id="tab-chat">
     <div class="chat-layout">
-      <div class="context-pill" id="contextPill">● Loan context loading…</div>
+      <div class="chat-top-row">
+        <div class="context-pill" id="contextPill">● Loan context loading…</div>
+        <label class="lang-select-wrap">
+          <span class="lang-select-label">Reply in</span>
+          <select id="langSelect">
+            <option value="hinglish" selected>Hinglish</option>
+            <option value="english">English</option>
+            <option value="hindi">हिन्दी (Hindi)</option>
+          </select>
+        </label>
+      </div>
 
       <div class="chat-window" id="chatWindow">
         <div class="chat-empty" id="chatEmpty">
           <div class="icon">💬</div>
-          <div>Apna loan ke baare mein kuch bhi pucho — EMI, prepayment, tax benefits, sab kuch.</div>
+          <div id="chatEmptyText">Apna loan ke baare mein kuch bhi pucho — EMI, prepayment, tax benefits, sab kuch.</div>
           <div class="suggestions">
             <button class="suggestion-chip" data-q="Prepayment karne se kitna interest bachega?">Prepayment karne se kitna interest bachega?</button>
             <button class="suggestion-chip" data-q="Floating aur fixed rate mein kya fark hai?">Floating aur fixed rate mein kya fark hai?</button>
@@ -886,6 +910,41 @@ const sendBtn = document.getElementById('sendBtn');
 const charCounter = document.getElementById('charCounter');
 const cooldownOverlay = document.getElementById('cooldownOverlay');
 const pipsEl = document.getElementById('pips');
+const langSelect = document.getElementById('langSelect');
+
+const EMPTY_STATE_TEXT = {
+  hinglish: 'Apna loan ke baare mein kuch bhi pucho — EMI, prepayment, tax benefits, sab kuch.',
+  english: 'Ask anything about your loan — EMI, prepayment, tax benefits, all of it.',
+  hindi: 'अपने लोन के बारे में कुछ भी पूछें — EMI, प्रीपेमेंट, टैक्स बेनिफिट, सब कुछ.',
+};
+const INPUT_PLACEHOLDER_TEXT = {
+  hinglish: 'Apna sawaal yaha type karo… (Enter to send, Shift+Enter for new line)',
+  english: 'Type your question here… (Enter to send, Shift+Enter for new line)',
+  hindi: 'अपना सवाल यहाँ टाइप करें… (भेजने के लिए Enter, नई लाइन के लिए Shift+Enter)',
+};
+
+function getSelectedLanguage() {
+  return langSelect.value;
+}
+
+(function initLanguage() {
+  let saved = 'hinglish';
+  try { saved = localStorage.getItem('loanclear-lang') || 'hinglish'; } catch (e) {}
+  langSelect.value = saved;
+  applyLanguageText(saved);
+})();
+
+function applyLanguageText(lang) {
+  const emptyTextEl = document.getElementById('chatEmptyText');
+  if (emptyTextEl) emptyTextEl.textContent = EMPTY_STATE_TEXT[lang] || EMPTY_STATE_TEXT.hinglish;
+  chatInput.placeholder = INPUT_PLACEHOLDER_TEXT[lang] || INPUT_PLACEHOLDER_TEXT.hinglish;
+}
+
+langSelect.addEventListener('change', () => {
+  const lang = getSelectedLanguage();
+  try { localStorage.setItem('loanclear-lang', lang); } catch (e) {}
+  applyLanguageText(lang);
+});
 
 function updateContextPill() {
   const pill = document.getElementById('contextPill');
@@ -998,6 +1057,7 @@ async function sendMessage(text) {
       headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
       body: JSON.stringify({
         message,
+        language: getSelectedLanguage(),
         loanContext: {
           amount: loanState.amount,
           rate: loanState.rate,

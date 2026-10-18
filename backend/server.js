@@ -26,6 +26,10 @@ const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'http://localhost:5500';
 
 const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
 
+// Railway (and most PaaS hosts) sit behind a reverse proxy — trust its
+// X-Forwarded-For so req.ip and the rate limiters see the real client IP.
+app.set('trust proxy', 1);
+
 // --- Security layers, in order ---
 
 app.use(helmet());
@@ -58,6 +62,7 @@ const chatValidators = [
   body('loanContext.emi').isFloat({ min: 1 }),
   body('loanContext.totalInterest').isFloat({ min: 0 }),
   body('loanContext.loanType').isIn(['floating', 'fixed']),
+  body('language').optional().isIn(['hinglish', 'english', 'hindi']),
 ];
 
 app.post('/api/chat', perMinuteLimiter, dailyLimiter(DAILY_LIMIT_PER_IP), chatValidators, async (req, res) => {
@@ -68,7 +73,7 @@ app.post('/api/chat', perMinuteLimiter, dailyLimiter(DAILY_LIMIT_PER_IP), chatVa
     return res.status(400).json({ error: 'Invalid request.', details: errors.array() });
   }
 
-  const { message, loanContext } = req.body;
+  const { message, loanContext, language } = req.body;
   const sessionIdHeader = req.header('X-Session-ID');
 
   if (checkInjection(message)) {
@@ -100,13 +105,13 @@ app.post('/api/chat', perMinuteLimiter, dailyLimiter(DAILY_LIMIT_PER_IP), chatVa
     appendToHistory(session, 'user', message);
     session.messageCount += 1;
 
-    const systemPrompt = buildSystemPrompt(loanContext);
+    const systemPrompt = buildSystemPrompt(loanContext, language);
     const history = prunedHistory(session, 8);
 
     const completion = await groq.chat.completions.create({
       model: 'openai/gpt-oss-20b',
       max_tokens: MAX_TOKENS_PER_REPLY,
-      reasoning_effort: 'low',
+      reasoning_effort: 'medium',
       messages: [{ role: 'system', content: systemPrompt }, ...history],
     });
 
