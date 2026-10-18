@@ -487,8 +487,14 @@
       <div class="card">
         <h2 class="section-title">Loan details</h2>
 
+        <div class="strategy-tabs" id="loanModeTabs" style="margin-bottom: 18px;">
+          <button class="strategy-tab active" data-mode="new">New loan</button>
+          <button class="strategy-tab" data-mode="existing">Existing loan</button>
+        </div>
+        <p class="planner-subtitle" id="loanModeHint">Planning a new loan — enter the full amount and tenure you're taking.</p>
+
         <div class="control-group">
-          <div class="control-label"><span>Loan amount</span><span class="value mono" id="amountLabel">₹25.0L</span></div>
+          <div class="control-label"><span id="amountFieldLabel">Loan amount</span><span class="value mono" id="amountLabel">₹25.0L</span></div>
           <input type="range" id="amountSlider" min="100000" max="10000000" step="10000" value="2500000">
         </div>
 
@@ -498,7 +504,7 @@
         </div>
 
         <div class="control-group">
-          <div class="control-label"><span>Tenure</span><span class="value mono" id="tenureLabel">20 yr</span></div>
+          <div class="control-label"><span id="tenureFieldLabel">Tenure</span><span class="value mono" id="tenureLabel">20 yr</span></div>
           <input type="range" id="tenureSlider" min="1" max="30" step="1" value="20">
         </div>
 
@@ -535,6 +541,7 @@
 
     <div class="amort-wrap card">
       <h2 class="section-title">Amortization schedule</h2>
+      <p class="planner-subtitle" id="amortModeHint" style="display:none;">"Year 1" below means the next 12 months from today, not the original year 1 of your loan.</p>
       <div class="amort-table-scroll">
         <table>
           <thead><tr><th>Year</th><th>Principal paid</th><th>Interest paid</th><th>Total paid</th><th>Balance</th></tr></thead>
@@ -548,10 +555,11 @@
   <section class="tab-panel" id="tab-planner">
     <div class="card">
       <h2 class="section-title">Loan details</h2>
+      <p class="planner-subtitle" id="plannerLoanModeHint">Planning a new loan — enter the full amount and tenure you're taking. (Set this on the EMI Calculator tab.)</p>
       <div class="planner-inputs">
-        <div class="field"><label>Loan amount (₹)</label><input type="number" id="plannerAmount" min="100000" max="10000000" step="10000"></div>
+        <div class="field"><label id="plannerAmountFieldLabel">Loan amount (₹)</label><input type="number" id="plannerAmount" min="100000" max="10000000" step="10000"></div>
         <div class="field"><label>Interest rate (%)</label><input type="number" id="plannerRate" min="5" max="20" step="0.05"></div>
-        <div class="field"><label>Tenure (years)</label><input type="number" id="plannerTenure" min="1" max="30" step="1"></div>
+        <div class="field"><label id="plannerTenureFieldLabel">Tenure (years)</label><input type="number" id="plannerTenure" min="1" max="30" step="1"></div>
       </div>
     </div>
 
@@ -871,6 +879,43 @@ const loanTypeSelect = document.getElementById('loanType');
 const loanState = { amount: 2500000, rate: 9.5, tenure: 20, loanType: 'floating', emi: 0, totalInterest: 0 };
 
 let doughnutChart, stackedBarChart, balanceChart;
+let loanMode = 'new';
+
+const LOAN_MODE_TEXT = {
+  new: {
+    amountLabel: 'Loan amount',
+    tenureLabel: 'Tenure',
+    hint: "Planning a new loan — enter the full amount and tenure you're taking.",
+  },
+  existing: {
+    amountLabel: 'Outstanding balance',
+    tenureLabel: 'Remaining tenure',
+    hint: "Already repaying this loan — enter today's outstanding balance and however many years are left, not the original numbers. All figures below (EMI, interest, amortization) will reflect where you are right now.",
+  },
+};
+
+function applyLoanMode(mode) {
+  loanMode = mode;
+  const t = LOAN_MODE_TEXT[mode];
+
+  document.querySelectorAll('#loanModeTabs .strategy-tab').forEach((tab) => {
+    tab.classList.toggle('active', tab.dataset.mode === mode);
+  });
+
+  document.getElementById('amountFieldLabel').textContent = t.amountLabel;
+  document.getElementById('tenureFieldLabel').textContent = t.tenureLabel;
+  document.getElementById('loanModeHint').textContent = t.hint;
+
+  document.getElementById('plannerAmountFieldLabel').textContent = t.amountLabel + ' (₹)';
+  document.getElementById('plannerTenureFieldLabel').textContent = t.tenureLabel + ' (years)';
+  document.getElementById('plannerLoanModeHint').textContent = t.hint + ' (Set this on the EMI Calculator tab.)';
+  document.getElementById('amortModeHint').style.display = mode === 'existing' ? '' : 'none';
+}
+
+document.getElementById('loanModeTabs').addEventListener('click', (e) => {
+  const tab = e.target.closest('.strategy-tab');
+  if (tab) applyLoanMode(tab.dataset.mode);
+});
 
 function updateCalculatorLabels() {
   document.getElementById('amountLabel').textContent = formatINR(loanState.amount);
@@ -1356,6 +1401,7 @@ document.querySelectorAll('.suggestion-chip').forEach((chip) => {
 renderCalculator();
 updateContextPill();
 applyStrategyTab('lumpSumOnly');
+applyLoanMode('new');
 </script>
 </body>
 </html>
