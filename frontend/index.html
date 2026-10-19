@@ -496,6 +496,23 @@
   }
   .intro-text strong { color: var(--text); }
 
+  .subscribe-section { margin-top: 24px; }
+  .subscribe-form { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .subscribe-form input[type="email"] {
+    flex: 1; min-width: 220px;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+    padding: 11px 14px; border-radius: 10px; font-family: var(--font-ui); font-size: 14px; outline: none;
+  }
+  .subscribe-form input[type="email"]:focus { border-color: var(--accent); }
+  .subscribe-form button {
+    background: var(--accent); color: #fff; border: none; border-radius: 10px;
+    padding: 11px 22px; font-weight: 600; cursor: pointer; font-family: var(--font-ui); font-size: 14px;
+  }
+  .subscribe-form button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .subscribe-message { font-size: 13px; margin: 10px 0 0; min-height: 1em; }
+  .subscribe-message.success { color: var(--green); }
+  .subscribe-message.error { color: var(--red); }
+
   .faq-section { margin-top: 24px; }
   .faq-item { margin-bottom: 18px; }
   .faq-item:last-child { margin-bottom: 0; }
@@ -761,6 +778,16 @@
         <div class="cooldown-overlay" id="cooldownOverlay"></div>
       </div>
     </div>
+  </section>
+
+  <section class="card subscribe-section">
+    <h2 class="section-title">Get notified about new features</h2>
+    <p class="planner-subtitle">New calculators, guides and updates — no spam, unsubscribe anytime.</p>
+    <form id="subscribeForm" class="subscribe-form">
+      <input type="email" id="subscribeEmail" placeholder="you@example.com" required maxlength="254">
+      <button type="submit" id="subscribeBtn">Subscribe</button>
+    </form>
+    <p id="subscribeMessage" class="subscribe-message"></p>
   </section>
 
   <section class="faq-section card">
@@ -1657,6 +1684,49 @@ chatInput.addEventListener('keydown', (e) => {
 });
 document.querySelectorAll('.suggestion-chip').forEach((chip) => {
   chip.addEventListener('click', () => sendMessage(chip.dataset.q));
+});
+
+// ============================================================
+// Email subscribe
+// ============================================================
+document.getElementById('subscribeForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = document.getElementById('subscribeEmail');
+  const btn = document.getElementById('subscribeBtn');
+  const msg = document.getElementById('subscribeMessage');
+  const email = input.value.trim();
+
+  msg.textContent = '';
+  msg.className = 'subscribe-message';
+  btn.disabled = true;
+  btn.textContent = 'Subscribing…';
+
+  try {
+    const res = await fetch(BACKEND_URL + '/api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      msg.textContent = data.error || 'Something went wrong. Please try again.';
+      msg.classList.add('error');
+    } else if (data.alreadySubscribed) {
+      msg.textContent = "You're already subscribed with this email.";
+      msg.classList.add('success');
+    } else {
+      msg.textContent = "Subscribed! You'll hear about new features and guides.";
+      msg.classList.add('success');
+      input.value = '';
+    }
+  } catch (err) {
+    msg.textContent = 'Could not reach the server. Please try again.';
+    msg.classList.add('error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Subscribe';
+  }
 });
 
 // ============================================================

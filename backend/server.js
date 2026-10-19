@@ -13,6 +13,7 @@ const { dailyLimiter, getDailyRemaining } = require('./middleware/dailyLimiter')
 const { getOrCreateSession, appendToHistory, prunedHistory } = require('./middleware/sessionStore');
 const { buildSystemPrompt } = require('./systemPrompt');
 const { loanTools, runLoanScenarioTool } = require('./loanTool');
+const { initDb, addSubscriber } = require('./db');
 
 const app = express();
 
@@ -207,6 +208,43 @@ app.post('/api/chat', perMinuteLimiter, dailyLimiter(DAILY_LIMIT_PER_IP), chatVa
   }
 });
 
+const subscribeLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    logger.warn('rate_limit_hit', { ip: req.ip, path: req.path });
+    res.status(429).json({ error: 'Too many requests, slow down.', retryAfter: 600 });
+  },
+});
+
+app.post(
+  '/api/subscribe',
+  subscribeLimiter,
+  body('email').isEmail().normalizeEmail().isLength({ max: 254 }),
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ error: 'Enter a valid email address.' });
+    }
+
+    if (!process.env.DATABASE_URL) {
+      logger.error('server_error', { reason: 'missing DATABASE_URL for /api/subscribe' });
+      return res.status(500).json({ error: 'Subscriptions are not configured.' });
+    }
+
+    try {
+      const { created } = await addSubscriber(req.body.email);
+      logger.info('subscribe_success', { ip: req.ip, created });
+      res.json({ subscribed: true, alreadySubscribed: !created });
+    } catch (err) {
+      logger.error('server_error', { ip: req.ip, message: err.message, stack: err.stack });
+      res.status(500).json({ error: 'Something went wrong. Please try again.' });
+    }
+  }
+);
+
 // --- 404 and error handlers ---
 
 app.use((req, res) => {
@@ -222,6 +260,15 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error.' });
 });
 
-app.listen(PORT, () => {
-  logger.info(`LoanNiti backend listening on port ${PORT}`);
-});
+initDb()
+  .then(() => {
+    app.listen(PORT, () => {
+      logger.info(`LoanNiti backend listening on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    logger.error('server_error', { reason: 'initDb failed', message: err.message });
+    app.listen(PORT, () => {
+      logger.info(`LoanNiti backend listening on port ${PORT} (subscribers table init failed)`);
+    });
+  });
