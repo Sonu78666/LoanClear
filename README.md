@@ -33,22 +33,15 @@ Serve `frontend/index.html` with any static server, e.g.:
 npx serve frontend -l 5500
 ```
 
-Open `http://localhost:5500`. The frontend talks to the backend at the URL set in `BACKEND_URL` near the top of `index.html`'s `<script>` block — defaults to `http://localhost:3001`, matching the backend's `ALLOWED_ORIGIN=http://localhost:5500` default.
+Open `http://localhost:5500`. `BACKEND_URL` in `index.html` auto-detects `localhost`/`127.0.0.1` and points at `http://localhost:3001` automatically — no manual editing needed for local dev.
+
+**Test everything locally before deploying** — every deploy to the frontend host counts against its (often limited) free-tier deploy quota, so don't burn it on iteration. Run the local backend + `npx serve frontend` loop above, confirm the change works, *then* deploy once.
 
 ## Deployment
 
-**Backend (Railway):**
-1. Push the `backend/` folder to a GitHub repo.
-2. Create a new Railway project from that repo.
-3. Add all variables from `.env.example` in the Railway dashboard (set your real `GROQ_API_KEY`, and `ALLOWED_ORIGIN` to your deployed frontend URL).
+**Backend (Railway):** push `backend/` to a GitHub repo, create a Railway project from it, and add the variables from `.env.example` — set your real `GROQ_API_KEY`, and `ALLOWED_ORIGIN` to a comma-separated list of every frontend origin that should be allowed (e.g. `https://yourdomain.netlify.app,http://localhost:5500`). CORS reflects whichever of those origins actually made the request and rejects anything else with a 403 — no redeploy needed just to add `localhost` to the list later.
 
-**Frontend (Netlify):**
-1. Before deploying, update in `frontend/index.html`:
-   - `BACKEND_URL` constant → your Railway backend URL.
-   - The CSP `<meta>` tag's `connect-src` → the same backend URL.
-2. Drag-and-drop the `frontend/` folder onto Netlify, or connect the repo.
-
-After deploying both, update the backend's `ALLOWED_ORIGIN` env var to the live Netlify URL and redeploy the backend so CORS allows it.
+**Frontend (Netlify or similar):** `BACKEND_URL` and the CSP `connect-src` only need editing in `index.html` if your production backend URL changes — otherwise they're already pointed at the live Railway URL. Drag-and-drop the `frontend/` folder onto your host, or connect the repo.
 
 ## Notes
 
