@@ -23,7 +23,12 @@ const DAILY_LIMIT_PER_IP = Number(process.env.DAILY_LIMIT_PER_IP) || 30;
 const MAX_MESSAGES_PER_SESSION = Number(process.env.MAX_MESSAGES_PER_SESSION) || 10;
 const MAX_INPUT_CHARS = Number(process.env.MAX_INPUT_CHARS) || 400;
 const MAX_TOKENS_PER_REPLY = Number(process.env.MAX_TOKENS_PER_REPLY) || 600;
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'http://localhost:5500';
+// Comma-separated list, so production and local dev can both be allowed at
+// once without toggling this env var back and forth before every deploy.
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGIN || 'http://localhost:5500')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
 
@@ -34,7 +39,13 @@ app.set('trust proxy', 1);
 // --- Security layers, in order ---
 
 app.use(helmet());
-app.use(cors({ origin: ALLOWED_ORIGIN }));
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow non-browser requests (no Origin header, e.g. curl/health checks).
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
+}));
 app.use(express.json({ limit: '10kb' }));
 
 const perMinuteLimiter = rateLimit({
@@ -203,6 +214,10 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
+  if (err.message === 'Not allowed by CORS') {
+    logger.warn('cors_rejected', { origin: req.headers.origin, path: req.path });
+    return res.status(403).json({ error: 'Origin not allowed.' });
+  }
   logger.error('server_error', { message: err.message, stack: err.stack });
   res.status(500).json({ error: 'Internal server error.' });
 });

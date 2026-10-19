@@ -25,7 +25,7 @@
 <meta name="twitter:description" content="Calculate your home loan EMI, compare prepayment strategies to save interest, and chat with an AI loan assistant in Hinglish, English or Hindi." />
 <meta name="twitter:image" content="https://loanniti-app.netlify.app/og-image.png" />
 
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://www.googletagmanager.com; img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com; connect-src 'self' https://loanniti-backend-production.up.railway.app https://www.google-analytics.com https://www.googletagmanager.com https://region1.google-analytics.com;" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://www.googletagmanager.com; img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com; connect-src 'self' https://loanniti-backend-production.up.railway.app http://localhost:3001 https://www.google-analytics.com https://www.googletagmanager.com https://region1.google-analytics.com;" />
 
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-N48QHZ2RHR"></script>
@@ -811,7 +811,11 @@
 // ============================================================
 // Constants
 // ============================================================
-const BACKEND_URL = 'https://loanniti-backend-production.up.railway.app';
+// Auto-detects local dev vs production so this never has to be toggled by
+// hand before a deploy — a source of past mistakes.
+const BACKEND_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? 'http://localhost:3001'
+  : 'https://loanniti-backend-production.up.railway.app';
 const MAX_INPUT_CHARS = 400;
 const MAX_MESSAGES_PER_SESSION = 10;
 const COOLDOWN_SECONDS = 3;
